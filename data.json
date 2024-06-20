@@ -9,5 +9,12 @@
         "petExp": 180,
         "pet": "You have adopted a new pet!"
     },
+    "512699901998792705": {
+        "petName": "Popo",
+        "lastFeedTime": 1718900961,
+        "lastPlayTime": 1718900969,
+        "petLevel": 1,
+        "petExp": 70
+    },
     "330334601174056961": {"birthday": "May 24"}
 }

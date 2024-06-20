@@ -114,7 +114,8 @@ public class SleepyyBot extends ListenerAdapter {
                 Commands.slash("cat", "Get a random cat image"),
                 Commands.slash("meme", "Get a random meme"),
                 Commands.slash("fact", "Get a random fact"),
-                Commands.slash("profile", "View your profile information"),
+                Commands.slash("profile", "View your profile information")
+                        .addOption(OptionType.USER, "user", "The user whose profile you want to view", false),
                 Commands.slash("birthday", "Set your birthday")
                         .addOption(OptionType.STRING, "date", "Your birthday (MM-DD)", true),
                 Commands.slash("setcolor", "Set your profile color")
@@ -124,6 +125,7 @@ public class SleepyyBot extends ListenerAdapter {
                         .addOption(OptionType.STRING, "name", "Name your pet", false),
                 Commands.slash("help", "Get a list of all commands and their descriptions")
         ).queue();
+
 
     }
 
@@ -494,15 +496,16 @@ public class SleepyyBot extends ListenerAdapter {
 
     /**
      * This method handles the /profile command.
-     * It fetches and displays the user's profile information.
+     * It fetches and displays the specified user's profile information.
      *
      * @param event the event triggered by the /profile command interaction,
      *              containing the context of the interaction.
      */
     private void handleProfileCommand(SlashCommandInteractionEvent event) {
-        String userId = event.getUser().getId();
-        String username = event.getUser().getName();
-        String avatarUrl = event.getUser().getEffectiveAvatarUrl();
+        OptionMapping userOption = event.getOption("user");
+        String userId = userOption != null ? userOption.getAsUser().getId() : event.getUser().getId();
+        String username = userOption != null ? userOption.getAsUser().getName() : event.getUser().getName();
+        String avatarUrl = userOption != null ? userOption.getAsUser().getEffectiveAvatarUrl() : event.getUser().getEffectiveAvatarUrl();
 
         String color = data.has(userId) ? data.getJSONObject(userId).optString("color", "#FFFFFF") : "#FFFFFF";
         String birthday = data.has(userId) ? data.getJSONObject(userId).optString("birthday", "Not set") : "Not set";
@@ -514,7 +517,7 @@ public class SleepyyBot extends ListenerAdapter {
         embedBuilder.setTitle(username);
         embedBuilder.setThumbnail(avatarUrl);
         embedBuilder.setColor(java.awt.Color.decode(color));
-        embedBuilder.setDescription("Here is your profile information.");
+        embedBuilder.setDescription("Here is the profile information.");
         embedBuilder.addField("Birthday", birthday, true);
         embedBuilder.addField("Pet Name", petName, true);
         embedBuilder.addField("Pet Level", petLevel, true);
@@ -990,10 +993,30 @@ public class SleepyyBot extends ListenerAdapter {
     }
 
     /**
+     * Sends a message to a specific channel.
+     *
+     * @param jda     the JDA instance
+     * @param channelId the ID of the channel to send the message to
+     * @param message the message to send
+     */
+    private void sendMessageToChannel(JDA jda, String channelId, String message) {
+        jda.getTextChannelById(channelId).sendMessage(message).queue();
+    }
+
+    /**
      * Handles random pet interactions between users with pets.
      * Pairs users randomly and generates interaction messages.
      */
     private void handleRandomPetInteractions() {
+        // Check if enough time has passed since the last event
+        long currentTime = Instant.now().getEpochSecond();
+        long lastEventTime = storage.getLastEventTime();
+        long eventInterval = 5 * 60 * 60; // 5 hours in seconds
+
+        if (currentTime - lastEventTime < eventInterval) {
+            return; // Not enough time has passed since the last event
+        }
+
         // Collect all users with pets
         List<String> usersWithPets = new ArrayList<>();
         for (String userId : data.keySet()) {
@@ -1043,28 +1066,16 @@ public class SleepyyBot extends ListenerAdapter {
                     break;
             }
 
-            // Send a message to both users
-            sendPrivateMessage(jda, userId1, interactionMessage);
-            sendPrivateMessage(jda, userId2, interactionMessage);
+            // Send the interaction message to the general chat
+            String generalChannelId = "YOUR_CHANNEL_ID"; // Replace with your general channel ID
+            sendMessageToChannel(jda, generalChannelId, interactionMessage);
         }
-        // Save the updated data
+
+        // Update the timestamp of the last event
+        storage.setLastEventTime(currentTime);
         storage.save();
     }
 
-    /**
-     * Sends a private message to a user.
-     *
-     * @param jda     the JDA instance
-     * @param userId  the ID of the user to send the message to
-     * @param message the message to send
-     */
-    private void sendPrivateMessage(JDA jda, String userId, String message) {
-        jda.retrieveUserById(userId).queue(user -> {
-            user.openPrivateChannel().queue(channel -> {
-                channel.sendMessage(message).queue();
-            });
-        });
-    }
 
     /**
      * This method handles the /help command.
