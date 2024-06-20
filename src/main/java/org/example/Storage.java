@@ -53,4 +53,23 @@ public class Storage {
     public JSONObject getData() {
         return data;
     }
+
+    /**
+     * Gets the last event timestamp.
+     *
+     * @return the last event timestamp.
+     */
+    public long getLastEventTime() {
+        return data.optLong("lastEventTime", 0);
+    }
+
+    /**
+     * Sets the last event timestamp.
+     *
+     * @param timestamp the timestamp to set.
+     */
+    public void setLastEventTime(long timestamp) {
+        data.put("lastEventTime", timestamp);
+        save();
+    }
 }
