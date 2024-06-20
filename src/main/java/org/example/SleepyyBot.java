@@ -87,7 +87,7 @@ public class SleepyyBot extends ListenerAdapter {
      * @throws LoginException if the bot fails to login
      */
     public static void main(String[] args) throws LoginException {
-        String token = "PLACE_TOKEN_HERE"; //Bot's token
+        String token = "token"; //Bot's token
 
         JDABuilder builder = JDABuilder.createDefault(token);
         builder.setActivity(Activity.watching("Two sleepy humans!"));
@@ -204,17 +204,18 @@ public class SleepyyBot extends ListenerAdapter {
 
     /**
      * This method handles the /roll command.
-     * The user can specify the number of sides on a die, and it will roll the die and return a random result.
+     * It rolls a die with a fixed maximum of 6 sides and returns a random result.
      *
      * @param event the event triggered by the /roll command interaction,
-     *              containing the number of sides provided by the user and the context of the interaction.
+     *              containing the context of the interaction.
      */
     private void handleRollCommand(SlashCommandInteractionEvent event) {
-        int sides = (int) event.getOption("sides").getAsLong();
+        int sides = 6; // Fixed number of sides on the die
         Random random = new Random();
         int result = random.nextInt(sides) + 1;
         event.reply("You rolled a " + result + " (1-" + sides + ")").queue();
     }
+
 
     /**
      * This method handles the /8ball command.
